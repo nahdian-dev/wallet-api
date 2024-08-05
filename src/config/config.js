@@ -1,7 +1,6 @@
 const dotenv = require("dotenv");
 const path = require("path");
 const Joi = require("joi");
-const mongoose = require('mongoose');
 
 dotenv.config({ path: path.resolve(".env") });
 
@@ -16,13 +15,5 @@ function getConfig() {
         throw new Error(`Config validation error: ${error}`);
     }
 }
-
-// const connectDB = async () => {
-//     try {
-//         const connectDB = await mongoose.connect(process.env.CONNECTION_STRING)
-//     } catch (error) {
-
-//     }
-// }
 
 module.exports = getConfig();
