@@ -8,25 +8,43 @@ const jwt = require('jsonwebtoken');
 // @access public
 const login = async (req, res) => {
     const { email, password } = req.body;
-
     const schema = Joi.object({
         email: Joi.string().email().required(),
-        password: Joi.string().required()
+        password: Joi.string().min(4).max(12).required()
     });
 
-    const { error, value } = await schema.validate();
-
+    // HANDLE VALIDATION BODY
+    const { error, value } = schema.validate(req.body);
     if (error) {
-        res.status(400).json({
-            status: "error",
-            message: error.stack
+        return res.status(400).json({
+            "status": "error",
+            "message": "Validation failed",
+            "errors": [
+                {
+                    "message": error.details[0].message,
+                }
+            ]
         });
-        throw new Error(error);
     }
 
     const user = await Users.findOne({ email });
-    const compare = await bcrypt.compare(password, user.password);
 
+    // CHECK EMAIL IS ALREADY
+    if (!user) {
+        return res.status(400).json({
+            "status": "error",
+            "message": "Login failed",
+            "errors": [
+                {
+                    "field": "email",
+                    "message": "Email not found!"
+                }
+            ]
+        });
+    }
+
+    // PASSWORD COMPARE
+    const compare = await bcrypt.compare(password, user.password);
     if (compare) {
         const accessToken = await jwt.sign({
             user: {
@@ -39,16 +57,21 @@ const login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        res.status(200).json({
+        return res.status(200).json({
             status: "succes",
             accessToken: accessToken
         });
     } else {
-        res.status(400).json({
-            status: "error",
-            message: "Password not match!"
+        return res.status(400).json({
+            "status": "error",
+            "message": "Login failed",
+            "errors": [
+                {
+                    "field": "password",
+                    "message": "Password not match!"
+                }
+            ]
         });
-        throw new Error('Password not match!');
     }
 }
 
@@ -57,43 +80,64 @@ const login = async (req, res) => {
 // @access public
 const register = async (req, res) => {
     const { username, email, password } = req.body;
-
     const schema = Joi.object({
         username: Joi.string().min(4).max(16).required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(4).max(16).required(),
     });
 
-    const { error, value } = await schema.validate(req.body);
+    // HANDLE VALIDATION BODY
+    const { error, value } = schema.validate(req.body);
     if (error) {
-        res.status(400);
-        throw new Error(error);
+        return res.status(400).json({
+            "status": "error",
+            "message": "Register Failed",
+            "errors": [
+                {
+                    "message": "Email has been registered"
+                }
+            ]
+        });
     }
 
+    // HANDLE DUPLICATE EMAIL
     const alreadyEmail = await Users.findOne({ email });
     if (alreadyEmail) {
-        res.status(400);
-        throw new Error('Email sudah tersedia!');
+        return res.status(400).json({
+            "status": "error",
+            "message": "Register Failed",
+            "errors": [
+                {
+                    "field": "email",
+                    "message": "Email has been registered"
+                }
+            ]
+        });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10);
     try {
         const createUser = await Users.create({
             username,
             email,
             password: hashedPassword
         });
-        res.status(200).json({
-            message: "Register successfully!",
-            body: createUser
+
+        return res.status(201).json({
+            "status": "success",
+            "message": "Register Success",
+            "data": createUser
         });
-        console.log(email + " register successfully!");
     } catch (error) {
-        res.status(400).json({
-            status: "error",
-            message: error
+        return res.status(400).json({
+            "status": "error",
+            "message": "Register Failed",
+            "errors": [
+                {
+                    "message": error
+                }
+            ]
         });
-        throw new Error(error);
     }
 }
 
