@@ -26,5 +26,6 @@ const router = express.Router();
 // AUTHENTICATION
 router.post('/users/login', UsersController.login);
 router.post('/users/register', UsersController.register);
+router.post('/users/forgot-password', UsersController.forgotPassword);
 
 module.exports = router;
