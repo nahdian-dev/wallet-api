@@ -189,7 +189,7 @@ const forgotPassword = async (req, res) => {
     const to = email;
     const subject = 'Test Email';
     const text = 'This is a test email';
-    const html = forgotPasswordContent(user.username, user.resetPasswordToken);
+    const html = forgotPasswordContent(user.username, user.resetPasswordToken, user.resetPasswordExpires);
 
     // SEND EMAIL
     try {
@@ -213,10 +213,88 @@ const forgotPassword = async (req, res) => {
         "errors": [
             {
                 "to": email,
+                "token": user.resetPasswordToken,
+                "expired_token": user.resetPasswordExpires,
                 "message": "Success send email"
             }
         ]
     });
 }
 
-module.exports = { login, register, forgotPassword }
+const resetPassword = async (req, res) => {
+    const { token, email, new_password } = req.body;
+    const schema = Joi.object({
+        token: Joi.string().required(),
+        email: Joi.string().email().required(),
+        new_password: Joi.string().min(4).max(12).required()
+    });
+
+    // HANDLE VALIDATION BODY
+    const { error } = schema.validate(req.body);
+    if (error) {
+        return res.status(400).json({
+            "status": "error",
+            "message": "Validation Failed",
+            "errors": [
+                {
+                    "message": error.details[0].message
+                }
+            ]
+        });
+    }
+
+    // HASHED PASSWORD
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    try {
+        const user = await Users.findOneAndUpdate(
+            {
+                email: email,
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: Date.now() },
+            },
+            {
+                password: hashedPassword,
+                resetPasswordToken: null,
+                resetPasswordExpires: null,
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!user) {
+            return res.status(400).json({
+                "status": "error",
+                "message": "Reset password error",
+                "errors": [
+                    {
+                        "message": "Password reset token is invalid or has expired"
+                    }
+                ]
+            });
+        }
+
+        return res.status(200).json({
+            "status": "success",
+            "message": "Reset password success",
+            "errors": [
+                {
+                    "message": "Success reset password"
+                }
+            ]
+        });
+
+    } catch (err) {
+        return res.status(400).json({
+            "status": "error",
+            "message": "Reset password error",
+            "errors": [
+                {
+                    "message": err
+                }
+            ]
+        });
+    }
+}
+
+module.exports = { login, register, forgotPassword, resetPassword }

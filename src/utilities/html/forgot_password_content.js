@@ -1,4 +1,4 @@
-const forgotPasswordContent = (username, token) => {
+const forgotPasswordContent = (username, token, expiredToken) => {
   return `
     <!DOCTYPE html>
     <html>
@@ -57,6 +57,7 @@ const forgotPasswordContent = (username, token) => {
         <div class="content">
           <p>Hi ${username},</p>
           <p>This is your token: <b>${token}</b></p>
+          <p>Expired on: <b>${expiredToken}</b></p>
         </div>
       </div>
     </body>

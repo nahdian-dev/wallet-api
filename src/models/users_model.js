@@ -28,7 +28,7 @@ const usersModel = mongoose.Schema({
 );
 
 usersModel.methods.generatePasswordReset = function () {
-    this.resetPasswordToken = crypto.randomBytes(20).toString('hex');
+    this.resetPasswordToken = crypto.randomBytes(6).toString('base64').replace(/[^a-zA-Z]/g, '').substring(0, 6);
     this.resetPasswordExpires = Date.now() + 3600000;
 };
 
