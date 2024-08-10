@@ -1,11 +1,11 @@
 const bcrypt = require('bcryptjs');
-const Users = require('../models/users_model');
+const Auth = require('../models/users_model');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
 const sendMail = require('../config/mailer_config');
 
 // @desc POST login
-// @route POST - /users/login
+// @route POST - /auth/login
 // @access public
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -15,7 +15,7 @@ const login = async (req, res) => {
     });
 
     // HANDLE VALIDATION BODY
-    const { error, value } = schema.validate(req.body);
+    const { error } = schema.validate(req.body);
     if (error) {
         return res.status(400).json({
             "status": "error",
@@ -28,7 +28,7 @@ const login = async (req, res) => {
         });
     }
 
-    const user = await Users.findOne({ email });
+    const user = await Auth.findOne({ email });
 
     // CHECK EMAIL IS ALREADY
     if (!user) {
@@ -77,7 +77,7 @@ const login = async (req, res) => {
 }
 
 // @desc POST Register
-// @route POST - /users/register
+// @route POST - /auth/register
 // @access public
 const register = async (req, res) => {
     const { username, email, password } = req.body;
@@ -88,7 +88,7 @@ const register = async (req, res) => {
     });
 
     // HANDLE VALIDATION BODY
-    const { error, value } = schema.validate(req.body);
+    const { error } = schema.validate(req.body);
     if (error) {
         return res.status(400).json({
             "status": "error",
@@ -102,7 +102,7 @@ const register = async (req, res) => {
     }
 
     // HANDLE DUPLICATE EMAIL
-    const alreadyEmail = await Users.findOne({ email });
+    const alreadyEmail = await Auth.findOne({ email });
     if (alreadyEmail) {
         return res.status(400).json({
             "status": "error",
@@ -118,7 +118,7 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
-        const createUser = await Users.create({
+        const createUser = await Auth.create({
             username,
             email,
             password: hashedPassword
@@ -152,7 +152,7 @@ const forgotPassword = async (req, res) => {
     });
 
     // HANDLE VALIDATION BODY
-    const { error, value } = schema.validate(req.body);
+    const { error } = schema.validate(req.body);
     if (error) {
         return res.status(400).json({
             "status": "error",
@@ -166,7 +166,7 @@ const forgotPassword = async (req, res) => {
     }
 
     // HANDLE DUPLICATE EMAIL
-    const alreadyEmail = await Users.findOne({ email });
+    const alreadyEmail = await Auth.findOne({ email });
     if (!alreadyEmail) {
         return res.status(400).json({
             "status": "error",
@@ -187,17 +187,16 @@ const forgotPassword = async (req, res) => {
     const html = '<b>This is a test email</b>';
 
     // SEND EMAIL
-
     try {
         await sendMail(to, subject, text, html);
-    } catch (e) {
+    } catch (err) {
         return res.status(400).json({
             "status": "error",
             "message": "Error send email",
             "errors": [
                 {
                     "to": email,
-                    "message": error.details[0].message
+                    "message": err
                 }
             ]
         });

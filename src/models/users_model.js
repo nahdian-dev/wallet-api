@@ -20,4 +20,4 @@ const usersModel = mongoose.Schema({
     }
 )
 
-module.exports = mongoose.model('Users', usersModel)
+module.exports = mongoose.model('Auth', usersModel)

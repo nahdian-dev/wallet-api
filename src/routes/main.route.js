@@ -18,14 +18,14 @@
  */
 
 const express = require("express");
-const UsersController = require('../controllers/users_controller');
+const AuthController = require('../controllers/auth_controller');
 
 // Instance
 const router = express.Router();
 
 // AUTHENTICATION
-router.post('/users/login', UsersController.login);
-router.post('/users/register', UsersController.register);
-router.post('/users/forgot-password', UsersController.forgotPassword);
+router.post('/auth/login', AuthController.login);
+router.post('/auth/register', AuthController.register);
+router.post('/auth/forgot-password', AuthController.forgotPassword);
 
 module.exports = router;
