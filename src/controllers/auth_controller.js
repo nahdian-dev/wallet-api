@@ -143,7 +143,7 @@ const register = async (req, res) => {
 }
 
 // @desc POST Register
-// @route POST - /users/register
+// @route POST - /auth/forgot-password
 // @access public
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -165,20 +165,20 @@ const forgotPassword = async (req, res) => {
         });
     }
 
-    // HANDLE DUPLICATE EMAIL
-    const alreadyEmail = await Auth.findOne({ email });
-    if (!alreadyEmail) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Email not found",
-            "errors": [
-                {
-                    "field": "email",
-                    "message": "The email address you entered is not associated with any account."
-                }
-            ]
-        });
-    }
+    // // HANDLE EMAIL NOT FOUND
+    // const alreadyEmail = await Auth.findOne({ email });
+    // if (!alreadyEmail) {
+    //     return res.status(400).json({
+    //         "status": "error",
+    //         "message": "Email not found",
+    //         "errors": [
+    //             {
+    //                 "field": "email",
+    //                 "message": "The email address you entered is not associated with any account."
+    //             }
+    //         ]
+    //     });
+    // }
 
     // EMAIL CONTENT
     const to = email;
@@ -204,11 +204,11 @@ const forgotPassword = async (req, res) => {
 
     return res.status(200).json({
         "status": "success",
-        "message": "Email has been sent",
+        "message": "Email sent",
         "errors": [
             {
                 "to": email,
-                "message": error.details[0].message
+                "message": "Success send email"
             }
         ]
     });
