@@ -1,8 +1,9 @@
 const bcrypt = require('bcryptjs');
-const Auth = require('../models/users_model');
+const Users = require('../models/users_model');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
 const sendMail = require('../config/mailer_config');
+const forgotPasswordContent = require('../utilities/html/forgot_password_content');
 
 // @desc POST login
 // @route POST - /auth/login
@@ -28,7 +29,7 @@ const login = async (req, res) => {
         });
     }
 
-    const user = await Auth.findOne({ email });
+    const user = await Users.findOne({ email });
 
     // CHECK EMAIL IS ALREADY
     if (!user) {
@@ -102,7 +103,7 @@ const register = async (req, res) => {
     }
 
     // HANDLE DUPLICATE EMAIL
-    const alreadyEmail = await Auth.findOne({ email });
+    const alreadyEmail = await Users.findOne({ email });
     if (alreadyEmail) {
         return res.status(400).json({
             "status": "error",
@@ -118,7 +119,7 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
-        const createUser = await Auth.create({
+        const createUser = await Users.create({
             username,
             email,
             password: hashedPassword
@@ -165,26 +166,30 @@ const forgotPassword = async (req, res) => {
         });
     }
 
-    // // HANDLE EMAIL NOT FOUND
-    // const alreadyEmail = await Auth.findOne({ email });
-    // if (!alreadyEmail) {
-    //     return res.status(400).json({
-    //         "status": "error",
-    //         "message": "Email not found",
-    //         "errors": [
-    //             {
-    //                 "field": "email",
-    //                 "message": "The email address you entered is not associated with any account."
-    //             }
-    //         ]
-    //     });
-    // }
+    // HANDLE EMAIL NOT FOUND
+    const user = await Users.findOne({ email });
+    if (!user) {
+        return res.status(400).json({
+            "status": "error",
+            "message": "Email not found",
+            "errors": [
+                {
+                    "field": "email",
+                    "message": "The email address you entered is not associated with any account."
+                }
+            ]
+        });
+    }
+
+    //GENERATE TOKEN
+    user.generatePasswordReset();
+    await user.save();
 
     // EMAIL CONTENT
     const to = email;
     const subject = 'Test Email';
     const text = 'This is a test email';
-    const html = '<b>This is a test email</b>';
+    const html = forgotPasswordContent(user.username, user.resetPasswordToken);
 
     // SEND EMAIL
     try {

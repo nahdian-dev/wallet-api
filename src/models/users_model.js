@@ -1,23 +1,35 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const usersModel = mongoose.Schema({
     username: {
         type: String,
-        required: [true, 'Username harus di isi!']
+        required: true,
     },
     email: {
         type: String,
-        required: [true, 'Email harus di isi!'],
-        unique: [true, 'Username telah tersedia!']
+        required: true,
+        unique: true,
     },
     password: {
         type: String,
-        required: [true, 'Password harus di isi!']
-    }
+        required: true,
+    },
+    resetPasswordToken: {
+        type: String,
+    },
+    resetPasswordExpires: {
+        type: Date,
+    },
 },
     {
         timestamps: true,
     }
-)
+);
 
-module.exports = mongoose.model('Auth', usersModel)
+usersModel.methods.generatePasswordReset = function () {
+    this.resetPasswordToken = crypto.randomBytes(20).toString('hex');
+    this.resetPasswordExpires = Date.now() + 3600000;
+};
+
+module.exports = mongoose.model('Users', usersModel);
