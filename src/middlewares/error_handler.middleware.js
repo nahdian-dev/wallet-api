@@ -1,27 +1,12 @@
-const CustomApiError = require("../utilities/CustomApiError");
+const { sendErrorServerResponse } = require('../utilities/responses.utilities');
 
-const errorConverter = (err, res, req, next) => {
-    let error = err;
-
-    if (!(error instanceof CustomApiError)) {
-        const statusCode = error.statusCode || 500;
-        error = new CustomApiError(statusCode, error.message);
-    }
-    next(error);
-};
-
-// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-    let { statusCode, message } = err;
+    console.error(err.stack);
 
-    const response = {
-        is_success: false,
-        status_code: statusCode,
-        remark: message,
-        stack: err.stack
-    };
+    const statusCode = err.statusCode || 500;
+    const message = statusCode === 500 ? 'Something went wrong on the server.' : err.message;
 
-    res.status(statusCode).send(response);
+    sendErrorServerResponse(res, message, err, statusCode);
 };
 
-module.exports = { errorConverter, errorHandler };
+module.exports = { errorHandler };

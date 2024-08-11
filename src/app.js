@@ -3,8 +3,7 @@ const bodyParser = require('body-parser')
 const swaggerUi = require('swagger-ui-express');
 
 const routes = require("./routes");
-const { errorConverter, errorHandler } = require("./middlewares/error_handler.middleware");
-const CustomApiError = require("./utilities/CustomApiError");
+const { errorHandler } = require("./middlewares/error_handler.middleware");
 const connectDB = require('./config/mongo.config');
 const specs = require('./swagger');
 
@@ -23,12 +22,12 @@ app.use("/", routes);
 // Swagger UI setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-// Error Handling
+// Error Handling route not found
 app.use((req, res, next) => {
-    next(new CustomApiError(404, "Not found"));
+    const error = new Error('Not Found');
+    error.statusCode = 404;
+    next(error);
 });
-app.use(errorConverter);
 app.use(errorHandler);
-
 
 module.exports = app;

@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
-const Users = require('../models/users.model');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
+
+const Users = require('../models/users.model');
 const sendMail = require('../config/mailer.config');
 const forgotPasswordContent = require('../utilities/html/forgot_password_content.utilities');
 
@@ -48,7 +49,7 @@ const login = async (req, res) => {
     // PASSWORD COMPARE
     const compare = await bcrypt.compare(password, user.password);
     if (compare) {
-        const accessToken = await jwt.sign({
+        const accessToken = jwt.sign({
             user: {
                 username: user.name,
                 email: user.email,
@@ -122,7 +123,10 @@ const register = async (req, res) => {
         const createUser = await Users.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            resetPasswordExpires: null,
+            resetPasswordToken: null,
+            isVerified: 0
         });
 
         return res.status(201).json({
@@ -221,6 +225,9 @@ const forgotPassword = async (req, res) => {
     });
 }
 
+// @desc POST Reset Password
+// @route POST - /auth/reset-password
+// @access public
 const resetPassword = async (req, res) => {
     const { token, email, new_password } = req.body;
     const schema = Joi.object({
@@ -295,6 +302,13 @@ const resetPassword = async (req, res) => {
             ]
         });
     }
+}
+
+// @desc POST Reset Password
+// @route POST - /auth/reset-password
+// @access public
+const verifyEmail = async (req, res) => {
+
 }
 
 module.exports = { login, register, forgotPassword, resetPassword }
