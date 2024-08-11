@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs');
-const Users = require('../models/users_model');
+const Users = require('../models/users.model');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
-const sendMail = require('../config/mailer_config');
-const forgotPasswordContent = require('../utilities/html/forgot_password_content');
+const sendMail = require('../config/mailer.config');
+const forgotPasswordContent = require('../utilities/html/forgot_password_content.utilities');
 
 // @desc POST login
 // @route POST - /auth/login

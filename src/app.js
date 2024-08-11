@@ -1,13 +1,11 @@
 const express = require("express");
 const bodyParser = require('body-parser')
+const swaggerUi = require('swagger-ui-express');
 
 const routes = require("./routes");
 const { errorConverter, errorHandler } = require("./middlewares/error_handler.middleware");
 const CustomApiError = require("./utilities/CustomApiError");
-
-const connectDB = require('./config/mongo_config');
-
-const swaggerUi = require('swagger-ui-express');
+const connectDB = require('./config/mongo.config');
 const specs = require('./swagger');
 
 // Instance
@@ -19,11 +17,11 @@ connectDB();
 // Body Parser
 app.use(bodyParser.json());
 
-// Swagger UI setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
 // Routes
 app.use("/", routes);
+
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Error Handling
 app.use((req, res, next) => {

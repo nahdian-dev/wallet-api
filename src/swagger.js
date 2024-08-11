@@ -1,5 +1,5 @@
-// swagger.js
 const swaggerJsdoc = require('swagger-jsdoc');
+require('./routes/main.route');
 
 const options = {
     definition: {
@@ -16,7 +16,7 @@ const options = {
             }
         ]
     },
-    apis: ['./routes/main.route.js'], // Path to the API specs
+    apis: ['/routes/main.route.js'],
 };
 
 const specs = swaggerJsdoc(options);

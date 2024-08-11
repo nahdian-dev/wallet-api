@@ -1,4 +1,4 @@
-const config = require("./config/config");
+const config = require("./config/env.config");
 const app = require("./app");
 
 if (config.value.NODE_ENV !== "test") {
