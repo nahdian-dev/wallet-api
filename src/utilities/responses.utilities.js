@@ -8,7 +8,7 @@ const sendSuccessResponse = (res, message, data = {}, statusCode) => {
     });
 }
 
-const sendErrorServerResponse = (res, message, errors = {}, statusCode) => {
+const sendErrorResponse = (res, message, errors = {}, statusCode) => {
     res.status(statusCode).json({
         "success": false,
         "status": "error",
@@ -18,18 +18,18 @@ const sendErrorServerResponse = (res, message, errors = {}, statusCode) => {
     });
 }
 
-const sendErrorValidationResponse = (res, message, errors = {}, statusCode) => {
+const sendErrorValidationResponse = (res, errors = {}, statusCode) => {
     res.status(statusCode).json({
         "success": false,
         "status": "error",
         "status_code": statusCode,
-        "message": message,
+        "message": 'Error Validation',
         "validation_error": errors
     });
 }
 
 module.exports = {
     sendSuccessResponse,
-    sendErrorServerResponse,
+    sendErrorResponse,
     sendErrorValidationResponse
 }

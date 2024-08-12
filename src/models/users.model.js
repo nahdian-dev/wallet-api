@@ -15,12 +15,16 @@ const usersModel = mongoose.Schema({
         type: String,
         required: true,
     },
-    resetPasswordToken: {
+    reset_password_token: {
         type: String,
     },
-    resetPasswordExpires: {
+    reset_password_expires: {
         type: Date,
     },
+    is_verified: {
+        type: Number,
+        required: true,
+    }
 },
     {
         timestamps: true,

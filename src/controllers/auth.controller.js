@@ -1,10 +1,12 @@
 const bcrypt = require('bcryptjs');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 const Users = require('../models/users.model');
 const sendMail = require('../config/mailer.config');
 const forgotPasswordContent = require('../utilities/html/forgot_password_content.utilities');
+const { sendSuccessResponse, sendErrorResponse, sendErrorValidationResponse } = require('../utilities/responses.utilities');
 
 // @desc POST login
 // @route POST - /auth/login
@@ -92,58 +94,38 @@ const register = async (req, res) => {
     // HANDLE VALIDATION BODY
     const { error } = schema.validate(req.body);
     if (error) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Validation failed",
-            "errors": [
-                {
-                    "message": error.details[0].message,
-                }
-            ]
-        });
+        sendErrorValidationResponse(res, error.details[0].message, 400);
     }
 
     // HANDLE DUPLICATE EMAIL
     const alreadyEmail = await Users.findOne({ email });
     if (alreadyEmail) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Register Failed",
-            "errors": [
-                {
-                    "field": "email",
-                    "message": "Email has been registered"
-                }
-            ]
-        });
+        sendErrorResponse(res, 'Error Register Account', { "message": "Email has been registered" }, 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
-        const createUser = await Users.create({
+        const user = await Users.create({
             username,
             email,
             password: hashedPassword,
-            resetPasswordExpires: null,
-            resetPasswordToken: null,
-            isVerified: 0
+            reset_password_token: null,
+            reset_password_expires: null,
+            is_verified: 0
         });
 
-        return res.status(201).json({
-            "status": "success",
-            "message": "Register Success",
-            "data": createUser
-        });
+        // EMAIL CONTENT
+        const to = email;
+        const subject = 'Test Email';
+        const text = 'This is a test email';
+        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.id}">Pencet</a>`;
+
+        console.log("LINK: " + html);
+        await sendMail(to, subject, text, html);
+
+        sendSuccessResponse(res, 'Success Register Account', user, 201);
     } catch (error) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Register Failed",
-            "errors": [
-                {
-                    "message": error
-                }
-            ]
-        });
+        sendErrorResponse(res, 'Error Register Account', error, 400);
     }
 }
 
@@ -309,6 +291,19 @@ const resetPassword = async (req, res) => {
 // @access public
 const verifyEmail = async (req, res) => {
 
+    try {
+        await Users.replaceOne(
+            {
+                _id: mongoose.Types.ObjectId(req.params.id),
+            },
+            {
+                is_verified: 1,
+            }
+        );
+
+    } catch (err) {
+        sendErrorResponse(res, 'Error Verify Email', err, 400);
+    }
 }
 
-module.exports = { login, register, forgotPassword, resetPassword }
+module.exports = { login, register, forgotPassword, resetPassword, verifyEmail }
