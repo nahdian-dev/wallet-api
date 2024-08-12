@@ -218,7 +218,7 @@ const forgotPassword = async (req, res) => {
         "data": {
             "to": email,
             "token": user.resetPasswordToken,
-            "expired_token": user.resetPasswordExpires,
+            "expiredToken": user.resetPasswordExpires,
             "message": "Success send email"
         }
     });
