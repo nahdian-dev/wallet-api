@@ -64,6 +64,7 @@ const login = async (req, res) => {
 
         return res.status(200).json({
             status: "succes",
+            message: "Login Success",
             accessToken: accessToken
         });
     } else {
@@ -196,14 +197,12 @@ const forgotPassword = async (req, res) => {
     return res.status(200).json({
         "status": "success",
         "message": "Email sent",
-        "errors": [
-            {
-                "to": email,
-                "token": user.resetPasswordToken,
-                "expired_token": user.resetPasswordExpires,
-                "message": "Success send email"
-            }
-        ]
+        "data": {
+            "to": email,
+            "token": user.resetPasswordToken,
+            "expiredToken": user.resetPasswordExpires,
+            "message": "Success send email"
+        }
     });
 }
 
@@ -266,7 +265,7 @@ const resetPassword = async (req, res) => {
         return res.status(200).json({
             "status": "success",
             "message": "Reset password success",
-            "errors": [
+            "data": [
                 {
                     "message": "Success reset password"
                 }
