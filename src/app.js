@@ -16,6 +16,9 @@ connectDB();
 // Body Parser
 app.use(bodyParser.json());
 
+// Set viewengine ejs
+app.set('view engine', 'ejs');
+
 // Routes
 app.use("/", routes);
 

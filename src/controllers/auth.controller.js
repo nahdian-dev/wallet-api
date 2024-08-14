@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const Users = require('../models/users.model');
 const sendMail = require('../config/mailer.config');
 const forgotPasswordContent = require('../utilities/html/forgot_password_content.utilities');
-const { sendSuccessResponse, sendErrorResponse, sendErrorValidationResponse } = require('../utilities/responses.utilities');
+const Responses = require('../utilities/responses.utilities');
 
 // @desc POST login
 // @route POST - /auth/login
@@ -95,13 +95,13 @@ const register = async (req, res) => {
     // HANDLE VALIDATION BODY
     const { error } = schema.validate(req.body);
     if (error) {
-        sendErrorValidationResponse(res, error.details[0].message, 400);
+        return Responses.sendErrorValidationResponse(res, error.details[0].message, 400);
     }
 
     // HANDLE DUPLICATE EMAIL
     const alreadyEmail = await Users.findOne({ email });
     if (alreadyEmail) {
-        sendErrorResponse(res, 'Error Register Account', { "message": "Email has been registered" }, 400);
+        return Responses.sendErrorResponse(res, 'Error Register Account', { "message": "Email has been registered" }, 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -124,9 +124,9 @@ const register = async (req, res) => {
         console.log("LINK: " + html);
         await sendMail(to, subject, text, html);
 
-        sendSuccessResponse(res, 'Success Register Account', user, 201);
+        return Responses.sendSuccessResponse(res, 'Success Register Account', user, 201);
     } catch (error) {
-        sendErrorResponse(res, 'Error Register Account', error, 400);
+        return Responses.sendErrorResponse(res, 'Error Register Account', error, 400);
     }
 }
 
@@ -285,23 +285,29 @@ const resetPassword = async (req, res) => {
     }
 }
 
-// @desc POST Reset Password
-// @route POST - /auth/reset-password
+// @desc GET Verify Email
+// @route GET - /auth/verify-email/:id
 // @access public
 const verifyEmail = async (req, res) => {
+    const { id } = req.params;
 
     try {
-        await Users.replaceOne(
+        const updatedUser = await Users.findOneAndUpdate(
             {
-                _id: mongoose.Types.ObjectId(req.params.id),
+                _id: id
             },
             {
                 is_verified: 1,
+            },
+            {
+                new: true,
+                runValidators: true,
             }
         );
 
+        return res.render('verify_email/success_response_views', { user: updatedUser });
     } catch (err) {
-        sendErrorResponse(res, 'Error Verify Email', err, 400);
+        return res.status(400).render('verify_email/error_response_views');
     }
 }
 
