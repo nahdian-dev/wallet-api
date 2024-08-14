@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken');
 
-const { sendSuccessResponse, sendErrorServerResponse, sendErrorValidationResponse } = require('../utilities/responses.utilities')
+const Responses = require('../utilities/responses.utilities')
 const User = require('../models/users.model');
 
 const authMiddleware = async (req, res, next) => {
     const header = req.header('Authorization');
     if (!header) {
-        sendErrorValidationResponse(res, 'Access Denied', 'Access denied. No token provided.', 401);
+        return Responses.sendErrorValidationResponse(res, 'Access Denied', 'Access denied. No token provided.', 401);
     }
 
     try {
@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
         req.user = await User.findById(decoded._id);
         next();
     } catch (error) {
-        sendErrorValidationResponse(res, 'Invalid Token', error, 401);
+        return Responses.sendErrorValidationResponse(res, 'Invalid Token', error, 401);
     }
 };
 

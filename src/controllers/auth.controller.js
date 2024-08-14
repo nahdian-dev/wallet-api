@@ -21,31 +21,19 @@ const login = async (req, res) => {
     // HANDLE VALIDATION BODY
     const { error } = schema.validate(req.body);
     if (error) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Validation failed",
-            "errors": [
-                {
-                    "message": error.details[0].message,
-                }
-            ]
-        });
+        return Responses.sendErrorValidationResponse(res, error, 400);
     }
 
     const user = await Users.findOne({ email });
 
     // CHECK EMAIL IS ALREADY
     if (!user) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Login failed",
-            "errors": [
-                {
-                    "field": "email",
-                    "message": "Email not found!"
-                }
-            ]
-        });
+        return Responses.sendErrorResponse(res, 'Login Failed', { message: 'User not found' }, 400);
+    }
+
+    // CHECK VERIFIED ACCOUNT
+    if (user.is_verified == 0) {
+        return Responses.sendErrorResponse(res, 'Login Failed', { message: 'User has not been verified. Please check your email and verify your account.' }, 400);
     }
 
     // PASSWORD COMPARE
