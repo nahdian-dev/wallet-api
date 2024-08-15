@@ -24,6 +24,12 @@ const usersModel = mongoose.Schema({
     is_verified: {
         type: Number,
         required: true,
+    },
+    token_verify_email: {
+        type: String,
+    },
+    expired_token_verify_email: {
+        type: Date,
     }
 },
     {
@@ -34,6 +40,15 @@ const usersModel = mongoose.Schema({
 usersModel.methods.generatePasswordReset = function () {
     this.resetPasswordToken = crypto.randomBytes(4).readUInt32BE(0) % 1000000;
     this.resetPasswordExpires = Date.now() + 3600000;
+};
+
+usersModel.methods.generateTokenVerifyEmail = function () {
+    const part1 = crypto.randomBytes(6).toString('hex'); // 6 bytes = 12 hex characters
+    const part2 = crypto.randomBytes(6).toString('hex');
+    const part3 = crypto.randomBytes(6).toString('hex');
+
+    this.token_verify_email = `${part1}-${part2}-${part3}`;
+    this.expired_token_verify_email = Date.now() + 3600000;
 };
 
 module.exports = mongoose.model('Users', usersModel);

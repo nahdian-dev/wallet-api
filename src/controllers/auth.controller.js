@@ -87,8 +87,8 @@ const register = async (req, res) => {
     }
 
     // HANDLE DUPLICATE EMAIL
-    const alreadyEmail = await Users.findOne({ email });
-    if (alreadyEmail) {
+    const user = await Users.findOne({ email });
+    if (user) {
         return Responses.sendErrorResponse(res, 'Error Register Account', { "message": "Email has been registered" }, 400);
     }
 
@@ -103,13 +103,16 @@ const register = async (req, res) => {
             is_verified: 0
         });
 
+        //GENERATE TOKEN
+        user.generateTokenVerifyEmail();
+        await user.save();
+
         // EMAIL CONTENT
         const to = email;
         const subject = 'Test Email';
         const text = 'This is a test email';
-        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.id}">Pencet</a>`;
+        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.token_verify_email}">Pencet</a>`;
 
-        console.log("LINK: " + html);
         await sendMail(to, subject, text, html);
 
         return Responses.sendSuccessResponse(res, 'Success Register Account', user, 201);
@@ -274,15 +277,15 @@ const resetPassword = async (req, res) => {
 }
 
 // @desc GET Verify Email
-// @route GET - /auth/verify-email/:id
+// @route GET - /auth/verify-email/:token
 // @access public
 const verifyEmail = async (req, res) => {
-    const { id } = req.params;
+    const { token } = req.params;
 
     try {
         const updatedUser = await Users.findOneAndUpdate(
             {
-                _id: id
+                token_verify_email: token
             },
             {
                 is_verified: 1,
