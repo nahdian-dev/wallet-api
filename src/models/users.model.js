@@ -15,7 +15,7 @@ const usersModel = mongoose.Schema({
         type: String,
         required: true,
     },
-    reset_password_token: {
+    reset_password_otp: {
         type: String,
     },
     reset_password_expires: {
@@ -25,10 +25,10 @@ const usersModel = mongoose.Schema({
         type: Number,
         required: true,
     },
-    token_verify_email: {
+    verify_email_token: {
         type: String,
     },
-    expired_token_verify_email: {
+    verify_email_token_expires: {
         type: Date,
     }
 },
@@ -38,8 +38,8 @@ const usersModel = mongoose.Schema({
 );
 
 usersModel.methods.generatePasswordReset = function () {
-    this.resetPasswordToken = crypto.randomBytes(4).readUInt32BE(0) % 1000000;
-    this.resetPasswordExpires = Date.now() + 3600000;
+    this.reset_password_otp = crypto.randomBytes(4).readUInt32BE(0) % 1000000;
+    this.reset_password_expires = Date.now() + 3600000;
 };
 
 usersModel.methods.generateTokenVerifyEmail = function () {
@@ -47,8 +47,8 @@ usersModel.methods.generateTokenVerifyEmail = function () {
     const part2 = crypto.randomBytes(6).toString('hex');
     const part3 = crypto.randomBytes(6).toString('hex');
 
-    this.token_verify_email = `${part1}-${part2}-${part3}`;
-    this.expired_token_verify_email = Date.now() + 3600000;
+    this.verify_email_token = `${part1}-${part2}-${part3}`;
+    this.verify_email_token_expires = Date.now() + 3600000;
 };
 
 module.exports = mongoose.model('Users', usersModel);

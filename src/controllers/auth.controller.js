@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 
 const Users = require('../models/users.model');
 const sendMail = require('../config/mailer.config');
@@ -98,7 +97,7 @@ const register = async (req, res) => {
             username,
             email,
             password: hashedPassword,
-            reset_password_token: null,
+            reset_password_otp: null,
             reset_password_expires: null,
             is_verified: 0
         });
@@ -111,7 +110,7 @@ const register = async (req, res) => {
         const to = email;
         const subject = 'Test Email';
         const text = 'This is a test email';
-        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.token_verify_email}">Pencet</a>`;
+        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.verify_email_token}">Pencet</a>`;
 
         await sendMail(to, subject, text, html);
 
@@ -133,30 +132,18 @@ const forgotPassword = async (req, res) => {
     // HANDLE VALIDATION BODY
     const { error } = schema.validate(req.body);
     if (error) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Validation Failed",
-            "errors": [
-                {
-                    "message": error.details[0].message
-                }
-            ]
-        });
+        return Responses.sendErrorValidationResponse(res, error, 400);
     }
 
     // HANDLE EMAIL NOT FOUND
     const user = await Users.findOne({ email });
     if (!user) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Email not found",
-            "errors": [
-                {
-                    "field": "email",
-                    "message": "The email address you entered is not associated with any account."
-                }
-            ]
-        });
+        return Responses.sendErrorResponse(res, 'Email not found', { message: "'The email address you entered is not associated with any account.'" }, 400);
+    }
+
+    // CHECK VERIFIED ACCOUNT
+    if (user.is_verified == 0) {
+        return Responses.sendErrorResponse(res, 'Login Failed', { message: 'User has not been verified. Please check your email and verify your account.' }, 400);
     }
 
     //GENERATE TOKEN
@@ -167,43 +154,29 @@ const forgotPassword = async (req, res) => {
     const to = email;
     const subject = 'Test Email';
     const text = 'This is a test email';
-    const html = forgotPasswordContent(user.username, user.resetPasswordToken, user.resetPasswordExpires);
+    const html = forgotPasswordContent(user.username, user.reset_password_otp, user.resetPasswordExpires);
 
     // SEND EMAIL
     try {
         await sendMail(to, subject, text, html);
     } catch (err) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Error send email",
-            "errors": [
-                {
-                    "to": email,
-                    "message": err
-                }
-            ]
-        });
+        return Responses.sendErrorResponse(res, 'Error Send Email', err, 400);
     }
 
-    return res.status(200).json({
-        "status": "success",
-        "message": "Email sent",
-        "data": {
-            "to": email,
-            "token": user.resetPasswordToken,
-            "expiredToken": user.resetPasswordExpires,
-            "message": "Success send email"
-        }
-    });
+    return Responses.sendSuccessResponse(res, 'Email Sent', {
+        "to": email,
+        "otp": user.reset_password_otp,
+        "expired_otp": user.reset_password_expires
+    }, 200);
 }
 
 // @desc POST Reset Password
 // @route POST - /auth/reset-password
 // @access public
 const resetPassword = async (req, res) => {
-    const { token, email, new_password } = req.body;
+    const { otp, email, new_password } = req.body;
     const schema = Joi.object({
-        token: Joi.string().required(),
+        otp: Joi.string().required(),
         email: Joi.string().email().required(),
         new_password: Joi.string().min(4).max(12).required()
     });
@@ -211,15 +184,7 @@ const resetPassword = async (req, res) => {
     // HANDLE VALIDATION BODY
     const { error } = schema.validate(req.body);
     if (error) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Validation Failed",
-            "errors": [
-                {
-                    "message": error.details[0].message
-                }
-            ]
-        });
+        return Responses.sendErrorValidationResponse(res, error, 400);
     }
 
     // HASHED PASSWORD
@@ -228,13 +193,13 @@ const resetPassword = async (req, res) => {
         const user = await Users.findOneAndUpdate(
             {
                 email: email,
-                resetPasswordToken: token,
-                resetPasswordExpires: { $gt: Date.now() },
+                reset_password_otp: otp,
+                reset_password_expires: { $gt: Date.now() },
             },
             {
                 password: hashedPassword,
-                resetPasswordToken: null,
-                resetPasswordExpires: null,
+                reset_password_otp: null,
+                reset_password_expires: null,
             },
             {
                 new: true
@@ -242,37 +207,26 @@ const resetPassword = async (req, res) => {
         );
 
         if (!user) {
-            return res.status(400).json({
-                "status": "error",
-                "message": "Reset password error",
-                "errors": [
-                    {
-                        "message": "Password reset token is invalid or has expired"
-                    }
-                ]
-            });
+            return Responses.sendErrorResponse(res, 'Reset Password Error', { 'message': 'Password reset token is invalid or has expired' }, 400);
         }
 
-        return res.status(200).json({
-            "status": "success",
-            "message": "Reset password success",
-            "data": [
-                {
-                    "message": "Success reset password"
-                }
-            ]
-        });
+        // CHECK VERIFIED ACCOUNT
+        if (user.is_verified == 0) {
+            return Responses.sendErrorResponse(res, 'Login Failed', { message: 'User has not been verified. Please check your email and verify your account.' }, 400);
+        }
 
+        // CHECK VERIFIED ACCOUNT
+        if (user.is_verified == 0) {
+            return Responses.sendErrorResponse(res, 'Login Failed', { message: 'User has not been verified. Please check your email and verify your account.' }, 400);
+        }
+
+        return Responses.sendSuccessResponse(res, 'Reset Password Success', {
+            email: email,
+            reset_password_otp: otp,
+            resetPasswordExpires: { $gt: Date.now() },
+        }, 200);
     } catch (err) {
-        return res.status(400).json({
-            "status": "error",
-            "message": "Reset password error",
-            "errors": [
-                {
-                    "message": err
-                }
-            ]
-        });
+        return Responses.sendErrorResponse(res, 'Error Reset Password', err, 400);
     }
 }
 
@@ -285,16 +239,22 @@ const verifyEmail = async (req, res) => {
     try {
         const updatedUser = await Users.findOneAndUpdate(
             {
-                token_verify_email: token
+                verify_email_token: token
             },
             {
                 is_verified: 1,
+                verify_email_token: null,
+                verify_email_token_expires: null
             },
             {
                 new: true,
                 runValidators: true,
             }
         );
+
+        if (!updatedUser) {
+            return res.status(400).render('verify_email/expired_response_views');
+        }
 
         return res.render('verify_email/success_response_views', { user: updatedUser });
     } catch (err) {
