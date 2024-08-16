@@ -20,7 +20,7 @@
 const express = require("express");
 
 const AuthController = require('../controllers/auth.controller');
-const BankController = require('../controllers/bank.controller');
+const AccountController = require('../controllers/account.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 // Instance
@@ -34,6 +34,9 @@ router.post('/auth/reset-password', AuthController.resetPassword);
 router.get('/auth/verify-email/:token', AuthController.verifyEmail);
 
 // BANK
-router.get('/bank/create-bank', authMiddleware, BankController.createBank);
+router.post('/account/create-account', authMiddleware, AccountController.createAccount);
+router.get('/account/list-detail-account', authMiddleware, AccountController.getAccountByUserId);
+router.put('/account/update-detail-account/:id', authMiddleware, AccountController.updateAccountByUserId);
+router.delete('/account/delete-detail-account/:id', authMiddleware, AccountController.deleteAccountByUserId);
 
 module.exports = router;
