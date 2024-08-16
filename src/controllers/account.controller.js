@@ -98,12 +98,10 @@ const updateAccountByUserId = async (req, res) => {
                     new: true
                 }
             );
-            console.log(userAccount);
 
             if (!userAccount) {
                 return Responses.sendErrorResponse(res, 'Error Update Detail Account', { "message": "Cannot find a account" }, 400);
             }
-
 
             return Responses.sendSuccessResponse(res, 'Success Update Detail Account', userAccount, 200);
         } else {
@@ -130,7 +128,7 @@ const deleteAccountByUserId = async (req, res) => {
                 }
             );
 
-            if (!userAccount) {
+            if (userAccount.deletedCount === 0) {
                 return Responses.sendErrorResponse(res, 'Error Delete Account', { "message": "Cannot find a account" }, 400);
             }
 
@@ -140,8 +138,6 @@ const deleteAccountByUserId = async (req, res) => {
         }
 
     } catch (error) {
-        console.log(error);
-
         return Responses.sendErrorResponse(res, 'Error Delete Account', error, 400);
     }
 }
