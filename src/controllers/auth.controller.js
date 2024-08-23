@@ -262,4 +262,49 @@ const verifyEmail = async (req, res) => {
     }
 }
 
-module.exports = { login, register, forgotPassword, resetPassword, verifyEmail }
+// @desc POST Resend Verify Email
+// @route POST - /auth/resend-verify-email
+// @access public
+const resendVerifyEmail = async (req, res) => {
+    const { email } = req.body;
+
+    // HANDLE VALIDATION BODY
+    const { error } = schema.validate(req.body);
+    if (error) {
+        return Responses.sendErrorValidationResponse(res, error.details[0].message, 400);
+    }
+
+    // FIND USER
+    const user = await Users.findOne({ email });
+    if (!user) {
+        return Responses.sendErrorResponse(res, 'Error Resend Verify Email', { "message": "Email has not been registered" }, 400);
+    }
+
+    // CHECK USER IS VERIFIED
+    if (user.is_verified === 1) {
+        return Responses.sendErrorResponse(res, 'Error Resend Verify Email', { "message": "Email has been verified" }, 400);
+    }
+
+    try {
+        //GENERATE TOKEN
+        user.generateTokenVerifyEmail();
+        await user.save();
+
+        // EMAIL CONTENT
+        const to = email;
+        const subject = 'Test Email';
+        const text = 'This is a test email';
+        const html = `<a href="${req.protocol}://${req.get('host')}/auth/verify-email/${user.verify_email_token}">Pencet</a>`;
+
+        await sendMail(to, subject, text, html);
+
+        return Responses.sendSuccessResponse(res, 'Success Resend Verify Email', user, 201);
+    } catch (error) {
+        return Responses.sendErrorResponse(res, 'Error Resend Verify Email', error, 400);
+    }
+
+
+
+}
+
+module.exports = { login, register, forgotPassword, resetPassword, verifyEmail, resendVerifyEmail }

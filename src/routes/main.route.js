@@ -32,6 +32,7 @@ router.post('/auth/register', AuthController.register);
 router.post('/auth/forgot-password', AuthController.forgotPassword);
 router.post('/auth/reset-password', AuthController.resetPassword);
 router.get('/auth/verify-email/:token', AuthController.verifyEmail);
+router.post('/auth/resend-verify-email', AuthController.resendVerifyEmail);
 
 // BANK
 router.post('/account/create-account', authMiddleware, AccountController.createAccount);
